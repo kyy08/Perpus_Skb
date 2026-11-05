@@ -1,0 +1,275 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PETUGAS
+  ANGGOTA
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum CopyCondition {
+  GOOD
+  DAMAGED
+  LOST
+}
+
+enum CopyAvailability {
+  AVAILABLE
+  BORROWED
+  MAINTENANCE
+  LOST
+}
+
+enum LoanRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum LoanStatus {
+  BORROWED
+  PARTIALLY_RETURNED
+  RETURNED
+  CANCELLED
+}
+
+enum FineStatus {
+  UNPAID
+  PAID
+  WAIVED
+}
+
+model User {
+  id               Int             @id @default(autoincrement()) @db.UnsignedInt
+  role             UserRole
+  name             String          @db.VarChar(100)
+  email            String          @unique @db.VarChar(150)
+  passwordHash     String          @map("password_hash") @db.VarChar(255)
+  phone            String?         @db.VarChar(20)
+  isActive         Boolean         @default(true) @map("is_active")
+  lastLoginAt      DateTime?       @map("last_login_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+  member           Member?
+  reviewedRequests LoanRequest[]   @relation("RequestReviewer")
+  approvedLoans    Loan[]          @relation("LoanApprover")
+  paidFines        Fine[]          @relation("FinePayer")
+  updatedSettings  SystemSetting[] @relation("SettingUpdater")
+
+  @@map("users")
+}
+
+model Member {
+  id           Int           @id @default(autoincrement()) @db.UnsignedInt
+  userId       Int           @unique @map("user_id") @db.UnsignedInt
+  memberCode   String        @unique @map("member_code") @db.VarChar(30)
+  address      String?       @db.Text
+  birthDate    DateTime?     @map("birth_date") @db.Date
+  joinedAt     DateTime      @map("joined_at") @db.Date
+  status       MemberStatus  @default(ACTIVE)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  loanRequests LoanRequest[]
+  loans        Loan[]
+  fines        Fine[]
+
+  @@map("members")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  name      String   @db.VarChar(100)
+  slug      String   @unique @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  books     Book[]
+
+  @@map("categories")
+}
+
+model Author {
+  id        Int          @id @default(autoincrement()) @db.UnsignedInt
+  name      String       @db.VarChar(150)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  books     BookAuthor[]
+
+  @@map("authors")
+}
+
+model Publisher {
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  name      String   @db.VarChar(150)
+  address   String?  @db.Text
+  phone     String?  @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  books     Book[]
+
+  @@map("publishers")
+}
+
+model Book {
+  id              Int               @id @default(autoincrement()) @db.UnsignedInt
+  title           String            @db.VarChar(255)
+  description     String?           @db.Text
+  publicationYear Int?              @map("publication_year") @db.SmallInt
+  language        String            @default("Indonesia") @db.VarChar(50)
+  publisherId     Int?              @map("publisher_id") @db.UnsignedInt
+  categoryId      Int?              @map("category_id") @db.UnsignedInt
+  coverUrl        String?           @map("cover_url") @db.VarChar(500)
+  deletedAt       DateTime?         @map("deleted_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  publisher       Publisher?        @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+  category        Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  authors         BookAuthor[]
+  copies          BookCopy[]
+  requestItems    LoanRequestItem[]
+
+  @@index([title])
+  @@index([categoryId])
+  @@map("books")
+}
+
+model BookAuthor {
+  bookId   Int    @map("book_id") @db.UnsignedInt
+  authorId Int    @map("author_id") @db.UnsignedInt
+  book     Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@id([bookId, authorId])
+  @@map("book_authors")
+}
+
+model BookCopy {
+  id                 Int              @id @default(autoincrement()) @db.UnsignedInt
+  bookId             Int              @map("book_id") @db.UnsignedInt
+  inventoryCode      String           @unique @map("inventory_code") @db.VarChar(50)
+  acquisitionDate    DateTime?        @map("acquisition_date") @db.Date
+  acquisitionPrice   Decimal?         @map("acquisition_price") @db.Decimal(12, 2)
+  conditionStatus    CopyCondition    @default(GOOD) @map("condition_status")
+  availabilityStatus CopyAvailability @default(AVAILABLE) @map("availability_status")
+  notes              String?          @db.Text
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  book               Book             @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  loanItems          LoanItem[]
+
+  @@index([bookId, availabilityStatus])
+  @@map("book_copies")
+}
+
+model LoanRequest {
+  id                    Int               @id @default(autoincrement()) @db.UnsignedInt
+  memberId              Int               @map("member_id") @db.UnsignedInt
+  requestedDurationDays Int               @map("requested_duration_days") @db.UnsignedSmallInt
+  status                LoanRequestStatus @default(PENDING)
+  notes                 String?           @db.Text
+  reviewedBy            Int?              @map("reviewed_by") @db.UnsignedInt
+  reviewedAt            DateTime?         @map("reviewed_at")
+  rejectionReason       String?           @map("rejection_reason") @db.Text
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  member                Member            @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  reviewer              User?             @relation("RequestReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  items                 LoanRequestItem[]
+  loan                  Loan?
+
+  @@index([memberId, status])
+  @@map("loan_requests")
+}
+
+model LoanRequestItem {
+  loanRequestId Int         @map("loan_request_id") @db.UnsignedInt
+  bookId        Int         @map("book_id") @db.UnsignedInt
+  quantity      Int         @default(1) @db.UnsignedTinyInt
+  loanRequest   LoanRequest @relation(fields: [loanRequestId], references: [id], onDelete: Cascade)
+  book          Book        @relation(fields: [bookId], references: [id], onDelete: Restrict)
+
+  @@id([loanRequestId, bookId])
+  @@map("loan_request_items")
+}
+
+model Loan {
+  id            Int         @id @default(autoincrement()) @db.UnsignedInt
+  loanCode      String      @unique @map("loan_code") @db.VarChar(30)
+  loanRequestId Int         @unique @map("loan_request_id") @db.UnsignedInt
+  memberId      Int         @map("member_id") @db.UnsignedInt
+  approvedBy    Int         @map("approved_by") @db.UnsignedInt
+  borrowedAt    DateTime    @default(now()) @map("borrowed_at")
+  dueAt         DateTime    @map("due_at")
+  status        LoanStatus  @default(BORROWED)
+  completedAt   DateTime?   @map("completed_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  request       LoanRequest @relation(fields: [loanRequestId], references: [id], onDelete: Restrict)
+  member        Member      @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  approver      User        @relation("LoanApprover", fields: [approvedBy], references: [id], onDelete: Restrict)
+  items         LoanItem[]
+
+  @@index([memberId, status])
+  @@index([dueAt, status])
+  @@map("loans")
+}
+
+model LoanItem {
+  id              Int            @id @default(autoincrement()) @db.UnsignedInt
+  loanId          Int            @map("loan_id") @db.UnsignedInt
+  bookCopyId      Int            @map("book_copy_id") @db.UnsignedInt
+  returnedAt      DateTime?      @map("returned_at")
+  notes           String?        @db.Text
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  loan            Loan           @relation(fields: [loanId], references: [id], onDelete: Restrict)
+  bookCopy        BookCopy       @relation(fields: [bookCopyId], references: [id], onDelete: Restrict)
+  fine            Fine?
+
+  @@unique([loanId, bookCopyId])
+  @@map("loan_items")
+}
+
+model Fine {
+  id         Int        @id @default(autoincrement()) @db.UnsignedInt
+  loanItemId Int        @unique @map("loan_item_id") @db.UnsignedInt
+  memberId   Int        @map("member_id") @db.UnsignedInt
+  lateDays   Int        @map("late_days") @db.UnsignedSmallInt
+  amount     Decimal    @db.Decimal(12, 2)
+  status     FineStatus @default(UNPAID)
+  paidAt     DateTime?  @map("paid_at")
+  paidBy     Int?       @map("paid_by") @db.UnsignedInt
+  notes      String?    @db.Text
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  loanItem   LoanItem   @relation(fields: [loanItemId], references: [id], onDelete: Restrict)
+  member     Member     @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  payer      User?      @relation("FinePayer", fields: [paidBy], references: [id], onDelete: SetNull)
+
+  @@index([memberId, status])
+  @@map("fines")
+}
+
+model SystemSetting {
+  id           Int      @id @default(autoincrement()) @db.UnsignedInt
+  settingKey   String   @unique @map("setting_key") @db.VarChar(100)
+  settingValue String   @map("setting_value") @db.VarChar(255)
+  description  String?  @db.VarChar(255)
+  updatedBy    Int?     @map("updated_by") @db.UnsignedInt
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  updater      User?    @relation("SettingUpdater", fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@map("system_settings")
+}
