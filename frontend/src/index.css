@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Ocean Blue Wedding Theme */
+    --background: 210 40% 98%;
+    --foreground: 210 40% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 40% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 40% 11%;
+
+    /* Soft Ocean Blue */
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Deep Ocean Blue */
+    --secondary: 201 96% 32%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 210 20% 45%;
+
+    /* Soft Ocean Accent */
+    --accent: 199 89% 94%;
+    --accent-foreground: 201 96% 32%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 30% 90%;
+    --input: 210 30% 90%;
+    --ring: 199 89% 48%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar - Deep Ocean */
+    --sidebar-background: 201 96% 32%;
+    --sidebar-foreground: 199 89% 94%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 201 96% 32%;
+    --sidebar-accent: 201 80% 40%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 201 80% 40%;
+    --sidebar-ring: 199 89% 48%;
+
+    /* Custom tokens */
+    --ocean-soft: 199 89% 48%;
+    --ocean-deep: 201 96% 32%;
+    --ocean-light: 199 89% 94%;
+    --ocean-pale: 199 50% 97%;
+    
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(210 30% 90% / 0.5);
+    --shadow-md: 0 4px 6px -1px hsl(210 30% 90% / 0.4), 0 2px 4px -2px hsl(210 30% 90% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(210 30% 90% / 0.4), 0 4px 6px -4px hsl(210 30% 90% / 0.3);
+    --shadow-card: 0 1px 3px hsl(201 96% 32% / 0.08), 0 4px 12px hsl(201 96% 32% / 0.05);
+  }
+
+  .dark {
+    --background: 210 40% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 210 40% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 210 40% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 201 70% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 18%;
+    --muted-foreground: 210 20% 65%;
+
+    --accent: 201 80% 20%;
+    --accent-foreground: 199 89% 90%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 30% 20%;
+    --input: 210 30% 20%;
+    --ring: 199 89% 48%;
+
+    --sidebar-background: 210 40% 10%;
+    --sidebar-foreground: 210 40% 90%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 18%;
+    --sidebar-accent-foreground: 210 40% 90%;
+    --sidebar-border: 210 30% 20%;
+    --sidebar-ring: 199 89% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  .stat-card {
+    @apply bg-card rounded-xl p-6 border border-border shadow-card transition-all duration-300 hover:shadow-lg;
+  }
+
+  .stat-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+  }
+
+  .table-container {
+    @apply bg-card rounded-xl border border-border overflow-hidden shadow-card;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200;
+  }
+
+  .nav-item-active {
+    @apply bg-sidebar-accent text-sidebar-accent-foreground font-medium;
+  }
+
+  .page-header {
+    @apply mb-8;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-foreground;
+  }
+
+  .page-subtitle {
+    @apply text-muted-foreground mt-1;
+  }
+}
+
+@layer utilities {
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .gradient-ocean {
+    background: linear-gradient(135deg, hsl(var(--ocean-soft)) 0%, hsl(var(--ocean-deep)) 100%);
+  }
+
+  .gradient-ocean-light {
+    background: linear-gradient(135deg, hsl(var(--ocean-light)) 0%, hsl(var(--background)) 100%);
+  }
+
+  .text-gradient-ocean {
+    background: linear-gradient(135deg, hsl(var(--ocean-soft)) 0%, hsl(var(--ocean-deep)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Toast progress bar shrink animation */
+  @keyframes shrink {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+}
